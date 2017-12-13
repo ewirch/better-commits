@@ -5,10 +5,13 @@ from sys import stderr
 DEBUG = False
 commandList = []
 
-
-def run_checked(command: [str], input_string=None) -> CompletedProcess:
+def run_unchecked(command: [str], input_string=None) -> CompletedProcess:
     add_to_command_list(command)
     result = run(command, input=input_string, stdout=PIPE, stderr=PIPE, encoding="UTF-8")
+    return result
+
+def run_checked(command: [str], input_string=None) -> CompletedProcess:
+    result = run_unchecked(command, input_string)
     if result.returncode > 1:
         print_command_fail_stack(result)
     return result
@@ -49,7 +52,7 @@ def create_unique_branch_name() -> str:
 
 def verify_branch_name(counter):
     branch_name = "tmp-branch-" + str(counter)
-    result = run_checked(["git", "rev-parse", "--verify", branch_name])
+    result = run_unchecked(["git", "rev-parse", "--verify", branch_name])
     return branch_name, result
 
 
@@ -60,7 +63,7 @@ def verify_worktree_clean() -> bool:
     #    0 = no uncommitted changes
     #    1 = uncommitted changes
     #    >1 = error
-    result = run_checked(["git", "diff-index", "--quiet", "HEAD"])
+    result = run_unchecked(["git", "diff-index", "--quiet", "HEAD"])
     if result.returncode == 1:
         return False
     # check for un-tracked un-ignored files, they will cause the un-stash to fail (if the stash contains them too)
@@ -68,7 +71,7 @@ def verify_worktree_clean() -> bool:
     #    0 = un-tracked, un-ignored files
     #    1 = clean
     #    >1 = error
-    result = run_checked(["git", "ls-files", "--exclude-standard", "--others", "--error-unmatch", "--", "."])
+    result = run_unchecked(["git", "ls-files", "--exclude-standard", "--others", "--error-unmatch", "--", "."])
     if result.returncode == 0:
         return False
     return True
@@ -150,7 +153,7 @@ def update_refactored_files(before_states):
 
 
 def detached_head():
-    result = run_checked(["git", "symbolic-ref", "-q", "HEAD"])
+    result = run_unchecked(["git", "symbolic-ref", "-q", "HEAD"])
     return result.returncode == 1
 
 
